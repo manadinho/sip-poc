@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIP Web Dialer</title>
+    <script src="https://cdn.jsdelivr.net/npm/jssip@latest/dist/jssip.min.js"></script>
+
+</head>
+<body>
+    <h2>SIP Web Dialer</h2>
+    <input type="text" id="target" placeholder="Enter SIP URI (e.g., sip:alice@example.com)">
+    <button id="call">Call</button>
+
+</body>
+</html>
+
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+      var socket = new JsSIP.WebSocketInterface("wss://tkxel-team.vivantvoip.dev:5065");
+      var configuration = {
+          sockets: [socket],
+          uri: "sip:102_webrtc@tkxel-team.vivantvoip.dev",
+          password: "55wi4Vy7VQ7OGVczmp1hGGSAIikYD8pw",
+          debug: true,
+      };
+
+      var ua = new JsSIP.UA(configuration);
+
+      ua.start();
+
+      // Function to send OPTIONS request
+      function sendOptionsRequest() {
+          console.log("Sending OPTIONS request");
+          if (ua.isConnected()) {
+              ua.sendMessage("sip:102_webrtc@tkxel-team.vivantvoip.dev", "Keep alive");
+          }
+      }
+
+      // Set interval for sending OPTIONS request
+      var optionsRequestInterval = 60000; // 60 seconds - adjust as needed
+      setInterval(sendOptionsRequest, optionsRequestInterval);
+
+      document.getElementById("call").addEventListener("click", function () {
+          var target = document.getElementById("target").value;
+          if (target) {
+              var options = {
+                  mediaConstraints: { audio: true, video: false },
+              };
+              var session = ua.call(target, options);
+
+              // Log SDP offer
+              console.log("SDP Offer in Call Initiation:", session);
+
+              // Add event listeners to the session
+              session.on("progress", function (e) {
+                  console.log("Call is in progress");
+              });
+              session.on("failed", function (e) {
+                  console.log("Call failed with cause: " + e.cause);
+              });
+              session.on("ended", function (e) {
+                  console.log("Call ended with cause: " + e.cause);
+              });
+              session.on("confirmed", function (e) {
+                  console.log("Call confirmed");
+              });
+          }
+      });
+
+      // Event listener for incoming calls
+      // ua.on("newRTCSession", function (e) {
+      //     var session = e.session;
+
+      //     // Display a confirmation dialog for incoming calls
+      //     var confirmed = confirm("Incoming call from " + session.remote_identity.display_name + ". Accept?");
+          
+      //     if (confirmed) {
+      //         // Accept the incoming call
+      //         session.answer();
+      //     } else {
+      //         // Reject the incoming call
+      //         session.terminate();
+      //     }
+      // });
+  });
+</script>
